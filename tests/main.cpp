@@ -3,7 +3,6 @@
 #include <vector>
 #include <limits>
 #include <iomanip>
-#include <chrono>
 
 #include "../Common/Search_dispatcher.hpp"
 #include "../Common/Vector_distance.hpp"
@@ -88,11 +87,6 @@ int main(int argc, char** argv) {
 
     //MNIST
     if (args.dataset_type == Type::MNIST) {
-        using chrono::high_resolution_clock;
-        using chrono::duration_cast;
-        using chrono::nanoseconds;
-
-
         DataImages<uint8_t> D = load_mnist(args.input_file);
         DataImages<uint8_t> Q = load_mnist(args.query_file);
 
@@ -113,7 +107,6 @@ int main(int argc, char** argv) {
         cout <<"USAGE : -type <mnist|sift>"<<endl;
         exit(EXIT_FAILURE);
     }
-    
 
     return 0;
 }
