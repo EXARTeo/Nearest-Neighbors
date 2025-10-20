@@ -1,4 +1,3 @@
-//args.hpp
 #pragma once
 #include <string>
 #include <stdexcept>
@@ -13,6 +12,17 @@ enum class Mode {
     IVFFlat,
     IVFPQ
 };
+
+inline const char* to_string(Mode algo) {
+    switch (algo) {
+        case Mode::LSH:       return "LSH";
+        case Mode::Hypercube: return "Hypercube";
+        case Mode::IVFFlat:   return "IVFFlat";
+        case Mode::IVFPQ:     return "IVFPQ";
+        case Mode::Unknown:   return "Unknown";
+    }
+    return "UNKNOWN";
+}
 
 enum class Type {
     Unknown = 0,

@@ -51,7 +51,7 @@ DataImages<float> load_sift(const string& path) {
         if(dim == 0){
             dim = d;
         }
-        else if(d!=dim){
+        else if((uint32_t)d!=dim){
             throw runtime_error("mixed dims in sift");
         }
         vector<float> v(dim);

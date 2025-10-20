@@ -1,10 +1,18 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <limits>
+#include <iomanip>
+#include <chrono>
 
-#include "../Includes/Vector_distance.hpp"
+#include "../Common/Search_dispatcher.hpp"
+#include "../Common/Vector_distance.hpp"
+
+#include "../Includes/Call_handler.hpp"
 #include "../Includes/LoadData.hpp"
 #include "../Includes/Args.hpp"
+#include "../Includes/LSH.hpp"
+
 
 using namespace std;
 
@@ -80,12 +88,17 @@ int main(int argc, char** argv) {
 
     //MNIST
     if (args.dataset_type == Type::MNIST) {
+        using chrono::high_resolution_clock;
+        using chrono::duration_cast;
+        using chrono::nanoseconds;
+
+
         DataImages<uint8_t> D = load_mnist(args.input_file);
         DataImages<uint8_t> Q = load_mnist(args.query_file);
 
         if (args.R < 0.0) args.R = 2000.0; //default value for MNIST
 
-        //TODO: HERE CALL HANDLER BASE ON MOD
+        call_dispatcher<uint8_t>(args, D, Q);
     }
     //SIFT
     else if(args.dataset_type == Type::SIFT) {
@@ -94,7 +107,7 @@ int main(int argc, char** argv) {
 
         if (args.R < 0.0) args.R = 2.0; //default value for MNIST
 
-        //TODO: HERE CALL HANDLER BASE ON MOD
+        call_dispatcher<float>(args, D, Q);
     }
     else{
         cout <<"USAGE : -type <mnist|sift>"<<endl;

@@ -5,7 +5,6 @@
 
 
 template <class ItX, class ItY>
-
 double lp_dist(ItX x_start, ItX x_end, ItY y_start, double k){
     if (k < 0.0) {
         throw std::invalid_argument("lp_dist: k must be >= 0");
