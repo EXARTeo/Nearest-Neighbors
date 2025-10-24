@@ -22,7 +22,7 @@ GFunction::GFunction(size_t dim, uint32_t k, double w, uint32_t table_size, uint
 
     h.reserve(k);
     //TODO check again the seed + i
-    for (uint32_t i = 0; i < k; ++i) h.emplace_back(dim, w, seed + i);
+    for (uint32_t i = 0; i < k; ++i) h.emplace_back(dim, w, seed);
 }
 
 uint32_t GFunction::ID(const vector<double>& p) const {
@@ -50,8 +50,8 @@ LSH<T>::LSH(size_t dim, uint32_t k, uint32_t L, double w, uint32_t table_size, u
     //L diffrent g functios
     g.reserve(L);
     for (uint32_t i = 0; i < L; ++i)
-        //TODO check again the seed + i
-        g.emplace_back(dim, k, w, table_size, M, seed + i * 31);
+        //TODO check again the seed + i * 31
+        g.emplace_back(dim, k, w, table_size, M, seed);
 
     //L diffrent tables
     tables.resize(L);

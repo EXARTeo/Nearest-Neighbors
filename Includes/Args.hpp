@@ -2,7 +2,6 @@
 #include <string>
 #include <stdexcept>
 #include <algorithm>
-#include <unordered_set>
 #include <optional>
 
 enum class Mode {
@@ -36,7 +35,7 @@ struct Args {
     std::string input_file;             //-d
     std::string query_file;             //-q
     std::string output_file;            //-o
-    Type dataset_type = Type:: Unknown; //-type (default value unknown)
+    Type dataset_type = Type::Unknown;  //-type (default value unknown)
     
     int N = 1;                          //-N
     int seed = 1;                       //-seed
@@ -46,7 +45,7 @@ struct Args {
     //LSH
     int k = 4;                          //-k
     int L = 5;                          //-L
-    double w = 4.0;                     //-w
+    double w = 4.0;                     //-w (Hypercube too)
 
     //Hypercube
     int kproj = 14;                     //-kproj
@@ -62,6 +61,5 @@ struct Args {
     int M_pq = 16;                      //-M
 };
 
-
-// TODO
-// bool load_args(Args *args);
+//Read through the user input and saves the values
+Args load_args(int argc, char** argv);

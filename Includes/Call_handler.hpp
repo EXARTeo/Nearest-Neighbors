@@ -11,7 +11,7 @@ template<class T>
 void call_dispatcher(Args& args, DataImages<T>& D, DataImages<T>& Q) {
     switch (args.mode) {
         case Mode::LSH:{
-            LSH<T> table(D.dim, args.k, args.L, args.w, D.n/4, args.seed);
+            LSH<T> table(D.dim, args.k, args.L, args.w, D.n/4, args.seed);  //TODO n/4 n/8 ktl..
             table.build(D.X);
             searcher<T>(args, D.X, Q.X,
                 [&table](const vector<T>& q, int N) {return table.query_knn(q, N);}, 
