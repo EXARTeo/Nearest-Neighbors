@@ -6,8 +6,8 @@
 
 #include "../Common/Search_dispatcher.hpp"
 #include "../Common/Vector_distance.hpp"
+#include "../Common/Call_handler.hpp"
 
-#include "../Includes/Call_handler.hpp"
 #include "../Includes/LoadData.hpp"
 #include "../Includes/Args.hpp"
 #include "../Includes/LSH.hpp"

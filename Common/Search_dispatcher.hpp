@@ -57,8 +57,8 @@ void searcher(Args& args, vector<vector<T>>& X, vector<vector<T>>& Q, Knn knn, R
         out << "Query: " << qi + 1 << "\n";
         for (int i = 0; i < N; i++){
             out <<"Nearest neighbor-"<<i + 1<<": "<<Knn_approx[i].first<<'\n';
-            out <<"distanceApproximate: "        <<Knn_approx[i].second<<'\n';
-            out <<"distanceTrue: "               <<true_dist[i].second<<'\n';
+            out <<"distanceApproximate: "         <<Knn_approx[i].second<<'\n';
+            out <<"distanceTrue: "                <<true_dist[i].second<<'\n';
         }
 
         int hits = 0;
