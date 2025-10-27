@@ -61,7 +61,7 @@ Args load_args(int argc, char** argv){
         else if (s == string("-seed") && (i + 1 < argc)){
             args.seed = stoi(string(argv[++i]));
         }   //LSH only
-        else if (s == string("-lsh") && (i + 1 < argc)){
+        else if (s == string("-lsh")){
             args.mode = Mode::LSH;
             must_give[4]++;
         }
@@ -74,7 +74,7 @@ Args load_args(int argc, char** argv){
         else if (s == string("-w") && (i + 1 < argc)){
             args.w = stod(string(argv[++i]));
         }   //Hypercube only
-        else if (s == string("-hypercube") && (i + 1 < argc)){
+        else if (s == string("-hypercube")){
             args.mode = Mode::Hypercube;
             must_give[4]++;
         }
@@ -87,7 +87,7 @@ Args load_args(int argc, char** argv){
         else if (s == string("-probes") && (i + 1 < argc)){
             args.probes = stoi(string(argv[++i]));
         }   //IVFFlat / IVFPQ
-        else if (s == string("-ivfflat") && (i + 1 < argc)){
+        else if (s == string("-ivfflat")){
             args.mode = Mode::IVFFlat;
             must_give[4]++;
         }
@@ -97,7 +97,7 @@ Args load_args(int argc, char** argv){
         else if (s == string("-nprobe") && (i + 1 < argc)){
             args.nprobe = stoi(string(argv[++i]));
         }   //IVFPQ only
-        else if (s == string("-ivfpq") && (i + 1 < argc)){
+        else if (s == string("-ivfpq")){
             args.mode = Mode::IVFPQ;
             must_give[4]++;
         }
@@ -116,7 +116,7 @@ Args load_args(int argc, char** argv){
         }
     }
 
-    if (must_give[0] != 1 && must_give[1] != 1 && must_give[2] != 1 && must_give[3] != 1 && must_give[4] != 1){
+    if (must_give[0] != 1 || must_give[1] != 1 || must_give[2] != 1 || must_give[3] != 1 || must_give[4] != 1){
         cout <<"USAGE : $./search -d <input file> -q <query file> -k <int> -L <int> -w <double> -o <output file> -N <number of nearest> -R <radius> -type <flag> -lsh -range <true|false>\n";
         cout <<"USAGE : $./search -d <input file> -q <query file> -kproj <int> -w <double> -M <int> -probes <int> -o <output file> -N <number of nearest> -R <radius> -type <flag> -range <true|false> -hypercube\n";
         cout <<"USAGE : $./search -d <input file> -q <query file> -kclusters <int> -nprobe <int> -o <output file> -N <number of nearest> -R <radius> -type <flag> -range <true|false> -ivfflat -seed <int> \n";

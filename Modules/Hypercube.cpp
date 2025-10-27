@@ -97,7 +97,7 @@ vector<uint32_t> hamming_neighbors(const vector<int>& q_id, int kproj, int ham){
     vector<int> indices(kproj);
     iota(indices.begin(), indices.end(), 0); // [0, 1, 2, ..., kproj-1]
 
-    vector<int> comb(ham); //contains the indexes of q_id on which we should flip the bits
+    vector<int> comb(ham);                   //contains the indexes of q_id on which we should flip the bits
 
     //Recursively create all neighbor combinations of the given hamming distance
     function<void(int,int)> gen = [&](int start, int k) {

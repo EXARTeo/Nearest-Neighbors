@@ -21,18 +21,19 @@ GFunction::GFunction(size_t dim, uint32_t k, double w, uint32_t table_size, uint
     for (uint32_t i = 0; i < k; ++i) r[i] = uni_r(rng);
 
     h.reserve(k);
-    //TODO check again the seed + i
-    for (uint32_t i = 0; i < k; ++i) h.emplace_back(dim, w, seed);
+
+    for (uint32_t i = 0; i < k; ++i)
+        h.emplace_back(dim, w, seed * (i + 1));
 }
 
 uint32_t GFunction::ID(const vector<double>& p) const {
-    uint32_t acc = 0ULL;
+    uint64_t acc = 0;
     for (uint32_t i = 0; i < h.size(); ++i) {
-        uint32_t hi = h[i](p);
-        acc += (r[i] * hi) % M;
-        acc %= M;
+        uint64_t hi = h[i](p);
+        uint64_t ri = r[i];
+        acc = ((acc % M) + (((ri % M) * (hi % M)) % M)) % M;
     }
-    return acc;
+    return static_cast<uint32_t>(acc);
 }
 
 uint32_t GFunction::gfunc(const vector<double>& p) const {
@@ -50,8 +51,7 @@ LSH<T>::LSH(size_t dim, uint32_t k, uint32_t L, double w, uint32_t table_size, u
     //L diffrent g functios
     g.reserve(L);
     for (uint32_t i = 0; i < L; ++i)
-        //TODO check again the seed + i * 31
-        g.emplace_back(dim, k, w, table_size, M, seed);
+        g.emplace_back(dim, k, w, table_size, M, seed * (i + 1) + i);
 
     //L diffrent tables
     tables.resize(L);
@@ -65,7 +65,7 @@ void LSH<T>::insert_object(uint32_t obj_id, const vector<T>& x) {
     vector<double> p(x.begin(), x.end());
     for (uint32_t i = 0; i < L; ++i) {
         uint32_t lsh_id = g[i].ID(p);
-        uint32_t bucket_idx = g[i].gfunc(p);    //lsh_id % table_size
+        uint32_t bucket_idx = lsh_id % table_size;  //g[i].gfunc(p);
         Entry<T> new_enrty{obj_id, &x, lsh_id};
         tables[i].buckets[bucket_idx].push_back(new_enrty);
     }
@@ -75,6 +75,13 @@ template <class T>
 void LSH<T>::build(const vector<vector<T>>& X) {
     for (uint32_t id = 0; id < X.size(); ++id)
         insert_object(id, X[id]);
+
+    // for (uint32_t i = 0; i < L; i++){
+    //     cout <<"[DEBUG] G_"<<i<<endl;
+    //     for (uint32_t j = 0; j < table_size; j++){
+    //         cout <<"[DEBUG] bucket_"<<j<<" has size : "<<tables[i].buckets[j].size()<<endl;
+    //     }
+    // }
 }
 
 
@@ -88,20 +95,30 @@ vector<pair<uint32_t, double>> LSH<T>::query_knn(const vector<T>& q, int N) cons
     vector<double> qd(q.begin(), q.end());
     unordered_set<uint32_t> seen;
     priority_queue<pair<double, uint32_t>> max_heap; //(dist, id)
-
+    // cout <<"[DEBUG] STARTING KNN for query with the ID:"<<endl;
     for (uint32_t i = 0; i < L; ++i) {
+        // cout <<"[DEBUG] ID : "<<g[i].ID(qd)<<endl;
+ 
         uint32_t q_id = g[i].ID(qd);
         uint32_t bucket_idx = q_id % table_size;
-        const auto& bucket = tables[i].buckets[bucket_idx];
+        // cout <<'\n'<<"[DEBUG] q_id :  "     <<q_id<<endl; 
+        // cout <<'\n'<<"[DEBUG] bucket_idx :  "<<bucket_idx<<endl;
 
+        const auto& bucket = tables[i].buckets[bucket_idx];
+        // cout <<"[DEBUG] Size of bucket : "<< bucket.size()<<endl;
         for (const auto& e : bucket) {
+            // cout <<"[DEBUG] obj_id: " <<static_cast<uint32_t>(e.obj_id) <<endl;
+            // cout <<"[DEBUG] func_id: " <<static_cast<uint32_t>(e.func_id) <<endl;
+
             if (seen.insert(e.obj_id).second) {
-                double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0); //L2
-                if ((int)max_heap.size() < N)
-                    max_heap.emplace(dist, e.obj_id);
-                else if (dist < max_heap.top().first) {
-                    max_heap.pop();
-                    max_heap.emplace(dist, e.obj_id);
+                if (q_id == e.func_id){
+                    double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0);    //L2
+                    if ((int)max_heap.size() < N)
+                        max_heap.emplace(dist, e.obj_id);
+                    else if (dist < max_heap.top().first) {
+                        max_heap.pop();
+                        max_heap.emplace(dist, e.obj_id);
+                    }
                 }
             }
         }
@@ -127,20 +144,26 @@ vector<uint32_t> LSH<T>::query_range(const vector<T>& q, double R, size_t max_ch
     vector<double> qd(q.begin(), q.end());
     unordered_set<uint32_t> results;
     size_t checked = 0;
-
+    // cout <<"[DEBUG] STARTING range for query with the ID:"<<endl;
     for (uint32_t i = 0; i < L; ++i) {
+        // cout <<"[DEBUG] ID : "<<g[i].ID(qd)<<endl;
         uint32_t q_id = g[i].ID(qd);
         uint32_t bucket_idx = q_id % table_size;
-        const auto& bucket = tables[i].buckets[bucket_idx];
+        // cout <<'\n'<<"[DEBUG] bucket_idx :  "<<bucket_idx<<endl;
 
+        const auto& bucket = tables[i].buckets[bucket_idx];
         for (const auto& e : bucket) {
+            // cout <<"[DEBUG] obj_id: " <<static_cast<uint32_t>(e.obj_id) <<endl;
             if (results.find(e.obj_id) == results.end()) {
-                double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0);
-                ++checked;
-                if (dist < R)
-                    results.insert(e.obj_id);
-                if (max_checked && checked >= max_checked)
-                    break;
+                if (q_id == e.func_id){
+                    double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0);    //L2
+                    ++checked;
+                    if (dist < R){
+                        results.insert(e.obj_id);
+                    }
+                    if (max_checked && checked >= max_checked)
+                        break;
+                }
             }
         }
         if (max_checked && checked >= max_checked)

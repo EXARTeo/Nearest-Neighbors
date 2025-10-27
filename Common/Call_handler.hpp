@@ -16,7 +16,7 @@ void call_dispatcher(Args& args, DataImages<T>& D, DataImages<T>& Q) {
             table.build(D.X);
             searcher<T>(args, D.X, Q.X,
                 [&table](const vector<T>& q, int N) {return table.query_knn(q, N);}, 
-                [&table](const vector<T>& q, double R) {return table.query_range(q, R);});
+                [&table](const vector<T>& q, double R, size_t max_checked) {return table.query_range(q, R, max_checked);});
             break;
         }
         case Mode::Hypercube:{
@@ -24,7 +24,7 @@ void call_dispatcher(Args& args, DataImages<T>& D, DataImages<T>& Q) {
             table.build(D.X);
             searcher<T>(args, D.X, Q.X,
                 [&table](const vector<T>& q, int N) {return table.query_knn(q, N);}, 
-                [&table](const vector<T>& q, double R) {return table.query_range(q, R);});
+                [&table](const vector<T>& q, double R, size_t max_checked) {return table.query_range(q, R, max_checked);});
             break;
         }
         case Mode::IVFFlat:
