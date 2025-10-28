@@ -4,6 +4,7 @@
 
 #include "../Includes/LSH.hpp"
 #include "../Includes/Hypercube.hpp"
+#include "../Includes/IVFFlat.hpp"
 
 #include "Search_dispatcher.hpp"
 
@@ -27,7 +28,14 @@ void call_dispatcher(Args& args, DataImages<T>& D, DataImages<T>& Q) {
                 [&table](const vector<T>& q, double R, size_t max_checked) {return table.query_range(q, R, max_checked);});
             break;
         }
-        case Mode::IVFFlat:
+        case Mode::IVFFlat:{
+            IVFFlat<T> table(args.kclusters, args.nprobe, args.seed);
+            table.build(D.X);
+            searcher<T>(args, D.X, Q.X,
+                [&table](const vector<T>& q, int N) {return table.query_knn(q, N);}, 
+                [&table](const vector<T>& q, double R, size_t max_checked) {return table.query_range(q, R, max_checked);});
+            break;
+        }
         case Mode::IVFPQ:
         case Mode::Unknown:
         default:

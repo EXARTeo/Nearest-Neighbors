@@ -13,7 +13,7 @@ public:
     IVFFlat(int kclusters, int nprobe, uint32_t seed = 1);
 
 	//Insert an object to the table
-	void insert_object(uint32_t obj_id, const std::vector<T>& x, const std::vector<int>& centroid_idxs);
+	void insert_object(uint32_t obj_id, const std::vector<T>& x, const std::vector<std::vector<T>>& centroids);
 
 	//Initialize this table
 	void build(const std::vector<std::vector<T>>& X);
@@ -26,8 +26,9 @@ public:
 
 private:
     uint32_t seed;
-    int kclusters;        //number of clusters, aka number of 'buckets'
-    int nprobe;           //number of nearest clusters searched
+    int kclusters;                                  //number of clusters, aka number of 'buckets'
+    int nprobe;                                     //number of nearest clusters searched
+    std::vector<std::vector<T>> final_centroids;    //vector containing the finalized centroids
     HashTable<T> table;
 };
 
