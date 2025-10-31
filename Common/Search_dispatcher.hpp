@@ -83,7 +83,7 @@ void searcher(Args& args, vector<vector<T>>& X, vector<vector<T>>& Q, Knn knn, R
                 out << range_approx[i]<<'\n';
             }
         }
-        out <<endl;
+        out <<'\n';
     }
 
     double bf_avtime = load_bf_time(static_cast<int>(args.dataset_type));
@@ -94,6 +94,5 @@ void searcher(Args& args, vector<vector<T>>& X, vector<vector<T>>& Q, Knn knn, R
     out << "QPS: "                   << Qn/sum_tApprox          << "\n";    //TODO : (Qn * N)/sum_tApprox
     out << "tApproximateAverage: "   << sum_tApprox/Qn          << "\n";
     out << "tTrueAverage: "          << bf_avtime               << "\n";
-    out << "\n";
 
 }

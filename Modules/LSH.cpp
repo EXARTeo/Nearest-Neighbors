@@ -17,7 +17,7 @@ GFunction::GFunction(size_t dim, uint32_t k, double w, uint32_t table_size, uint
     : h(), r(k), M(M), table_size(table_size)
 {
     mt19937_64 rng(seed);
-    uniform_int_distribution<uint32_t> uni_r(1, M - 1);
+    uniform_int_distribution<uint64_t> uni_r(1, M - 1);
     for (uint32_t i = 0; i < k; ++i) r[i] = uni_r(rng);
 
     h.reserve(k);
@@ -158,7 +158,7 @@ vector<uint32_t> LSH<T>::query_range(const vector<T>& q, double R, size_t max_ch
                 if (q_id == e.func_id){
                     double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0);    //L2
                     ++checked;
-                    if (dist < R){
+                    if (dist <= R){
                         results.insert(e.obj_id);
                     }
                     if (max_checked && checked >= max_checked)

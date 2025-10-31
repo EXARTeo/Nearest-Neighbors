@@ -32,7 +32,6 @@ vector<int> nprobe_nearest_centroids(const vector<T>& q, const vector<vector<T>>
         }
     }
 
-    //TODO OPTIMIZE
     vector<int> res;
     while (!max_heap.empty()) {
         res.emplace_back(max_heap.top().second);
@@ -76,12 +75,11 @@ double distance_to_nearest_centroid(const vector<vector<T>>& X, const vector<T>&
 
 template <class T>
 vector<int> kmeans_init(const vector<vector<T>>& X, int kclusters, int seed){
-    // //possible improvement: check if X.size() == 0 or kclusters == 0 or kclusters > X.size() and throw error
-    // if (X.size() == 0) return;
-    // if (kclusters == 0) return;   ////////////// IMPORTANT: handle these cases correctly
-    // if (kclusters > X.size()) return;
 
-    vector<int> centroid_idxs; //vector containing the indexes (aka object_id) of the centroid points
+    if (X.size() == 0) throw runtime_error("The \"-d\" input dataset is empty");
+    if (kclusters > static_cast<int>(X.size())) throw runtime_error("kclusters must be smaller than dataset size");
+
+    vector<int> centroid_idxs;          //vector containing the indexes (aka object_id) of the centroid points
     centroid_idxs.reserve(kclusters);
 
     mt19937_64 rng(static_cast<uint64_t>(seed));
@@ -91,13 +89,13 @@ vector<int> kmeans_init(const vector<vector<T>>& X, int kclusters, int seed){
     //i = 1 at start because we already got 1 centroid
     for(int i = 1 ; i < kclusters ; i++){
 
-        double total = 0.0; //sum of all D(i)^2 
-        vector<double> all_squared_dists; //squared distance of each point to closest centroid
-        all_squared_dists.resize(X.size(), 0.0); //initialize all distances at zero
+        double total = 0.0;                         //sum of all D(i)^2 
+        vector<double> all_squared_dists;           //squared distance of each point to closest centroid
+        all_squared_dists.resize(X.size(), 0.0);    //initialize all distances at zero
 
         for (int j = 0 ; j < static_cast<int>(X.size()) ; j++){
             if (find(centroid_idxs.begin(), centroid_idxs.end(), j) != centroid_idxs.end()){
-                continue; //if X[j] is a centroid, skip it
+                continue;                           //if X[j] is a centroid, skip it
             }
             double shortest_dist = distance_to_nearest_centroid(X, X[j], centroid_idxs);
 
@@ -118,9 +116,10 @@ vector<int> kmeans_init(const vector<vector<T>>& X, int kclusters, int seed){
                 break;
             }
         }
-        // //due to floating point error, cumulative may never exceed r
-        // if (centroid_idxs.size() < i + 1)
-        //     centroid_idxs.push_back(X.size() - 1); //fallback
+
+        //Due to floating point error, cumulative may never exceed r
+        if (static_cast<int>(centroid_idxs.size()) < i + 1)
+            centroid_idxs.push_back(X.size() - 1);          //Fallback TODO
 
     }
     return centroid_idxs;
@@ -134,10 +133,10 @@ vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_i
     for (int idx : centroid_idxs)
         centroids.push_back(X[idx]);
 
-    const int max_iters = 100; //max iterations before stopping
-    const double tol = 1e-4;   //convergence tolerance
+    const int max_iters = 100;              //max iterations before stopping
+    const double tol = 1e-4;                //convergence tolerance
     int dim = X[0].size();
-    vector<int> assignments(X.size(), -1); //contains the index for the closest centroid of each point
+    vector<int> assignments(X.size(), -1);  //contains the index for the closest centroid of each point
 
     for (int iter = 0 ; iter < max_iters ; iter++){
         //assign each point to nearest centroid
@@ -165,7 +164,10 @@ vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_i
                     new_centroids[cluster][d] =  new_centroids[cluster][d] / static_cast<double>(counts[cluster]);
             }
             else {
-                ///////re-initialize centroids
+                mt19937_64 rng(static_cast<uint64_t>(seed));
+                uniform_int_distribution<int> subset_rand(0, static_cast<int>(X.size()) - 1);
+                int idx = subset_rand(rng);
+                new_centroids[cluster] = X[idx];   //TODO Yolo move goes brrrr
             }
         }
 
@@ -208,11 +210,35 @@ void IVFFlat<T>::insert_object(uint32_t obj_id, const vector<T>& x, const vector
 
 template <class T>
 void IVFFlat<T>::build(const vector<vector<T>>& X) {
+    if (kclusters <= 0) throw runtime_error("kclusters must be positive integer");
+    if (kclusters > static_cast<int>(X.size()))
+        kclusters = static_cast<int>(X.size());
+
+    //Fisrt, create a subset of X, X'
+    int sqrt_n = static_cast<int>(floor(sqrt(static_cast<double>(X.size()))));  //get floor of square root of X.size()
+    if (sqrt_n < kclusters)
+        sqrt_n = kclusters;
+
+    vector<vector<T>> subset;                                                   //stores a random subset X' of X with sqrt(X.size()) elements
+    subset.reserve(sqrt_n);
+
+    unordered_set<int> chosen_indices;                                          //store the indices of the already chosen elements for the subset
+
+    mt19937_64 rng(static_cast<uint64_t>(seed));
+    uniform_int_distribution<int> subset_rand(0, static_cast<int>(X.size()) - 1);
+
+    while (static_cast<int>(subset.size()) < sqrt_n) {
+        int idx = subset_rand(rng);
+        if (chosen_indices.insert(idx).second) {                                //add element to subset only if it is new
+            subset.push_back(X[idx]);
+        }
+    }
+
     //compute kmeans++ init to get first approximation of centroids first
-    vector<int> centroid_idxs = kmeans_init(X, kclusters, static_cast<int>(seed));
+    vector<int> centroid_idxs = kmeans_init(subset, kclusters, static_cast<int>(seed));
 
     //now have to do Lloyd's algorithm to get the final centroids
-    final_centroids = lloyds_alg(X, centroid_idxs, kclusters, seed);
+    final_centroids = lloyds_alg(subset, centroid_idxs, kclusters, seed);
 
     //Lastly insert all objects
     for (uint32_t id = 0; id < X.size(); ++id)
@@ -226,10 +252,11 @@ void IVFFlat<T>::build(const vector<vector<T>>& X) {
 template <class T>
 vector<pair<uint32_t, double>> IVFFlat<T>::query_knn(const vector<T>& q, int N) const {
 
-    vector<int> cent_idxs = nprobe_nearest_centroids(q, final_centroids, nprobe); //return vector with idxs of nprobe nearest clusters (aka bucket idxs)
-    priority_queue<pair<double, uint32_t>> max_heap; //(dist, id)
+    vector<int> cent_idxs = nprobe_nearest_centroids(q, final_centroids, nprobe);   //return vector with idxs of nprobe nearest clusters (aka bucket idxs)
+    priority_queue<pair<double, uint32_t>> max_heap;                                //(dist, id)
 
     for(int i = 0 ; i < static_cast<int>(cent_idxs.size()) ; i++){
+        int max_check = 0;
         const auto& bucket = table.buckets[cent_idxs[i]];
         for (const auto& e : bucket) {
             double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0); //L2
@@ -239,10 +266,14 @@ vector<pair<uint32_t, double>> IVFFlat<T>::query_knn(const vector<T>& q, int N) 
                 max_heap.pop();
                 max_heap.emplace(dist, e.obj_id);
             }
+            max_check++;
+            // if (max_check >= kclusters * 10)    //TODO change
+            //     break;
         }
+        // if (max_check >= kclusters * 10)        //TODO change
+        //     break;
     }
 
-    //TODO OPTIMIZE
     vector<pair<uint32_t, double>> res;
     while (!max_heap.empty()) {
         res.emplace_back(max_heap.top().second, max_heap.top().first);
@@ -260,7 +291,7 @@ vector<pair<uint32_t, double>> IVFFlat<T>::query_knn(const vector<T>& q, int N) 
 template <class T>
 vector<uint32_t> IVFFlat<T>::query_range(const vector<T>& q, double R, size_t max_checked) const {
 
-    vector<int> cent_idxs = nprobe_nearest_centroids(q, final_centroids, nprobe); //return vector with idxs of nprobe nearest clusters (aka bucket idxs)
+    vector<int> cent_idxs = nprobe_nearest_centroids(q, final_centroids, nprobe);   //return vector with idxs of nprobe nearest clusters (aka bucket idxs)
     vector<uint32_t> res;
 
     for(int i = 0 ; i < static_cast<int>(cent_idxs.size()) ; i++){
