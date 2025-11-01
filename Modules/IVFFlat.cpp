@@ -119,7 +119,7 @@ vector<int> kmeans_init(const vector<vector<T>>& X, int kclusters, int seed){
 
         //Due to floating point error, cumulative may never exceed r
         if (static_cast<int>(centroid_idxs.size()) < i + 1)
-            centroid_idxs.push_back(X.size() - 1);          //Fallback TODO
+            centroid_idxs.push_back(X.size() - 1);          //Fallback
 
     }
     return centroid_idxs;
@@ -194,7 +194,9 @@ vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_i
 
 template <class T>
 IVFFlat<T>::IVFFlat(int kclusters, int nprobe, uint32_t seed)
-    : seed(seed), kclusters(kclusters), nprobe(nprobe){
+    : seed(seed), kclusters(kclusters), nprobe(nprobe){    
+    if (kclusters <= 0) throw invalid_argument("kclusters must be positive");
+    if (nprobe <= 0)    throw invalid_argument("nprobe must be positive");
 
     table.buckets.resize(kclusters);
 }
@@ -256,7 +258,6 @@ vector<pair<uint32_t, double>> IVFFlat<T>::query_knn(const vector<T>& q, int N) 
     priority_queue<pair<double, uint32_t>> max_heap;                                //(dist, id)
 
     for(int i = 0 ; i < static_cast<int>(cent_idxs.size()) ; i++){
-        int max_check = 0;
         const auto& bucket = table.buckets[cent_idxs[i]];
         for (const auto& e : bucket) {
             double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0); //L2
@@ -266,12 +267,7 @@ vector<pair<uint32_t, double>> IVFFlat<T>::query_knn(const vector<T>& q, int N) 
                 max_heap.pop();
                 max_heap.emplace(dist, e.obj_id);
             }
-            max_check++;
-            // if (max_check >= kclusters * 10)    //TODO change
-            //     break;
         }
-        // if (max_check >= kclusters * 10)        //TODO change
-        //     break;
     }
 
     vector<pair<uint32_t, double>> res;
@@ -293,6 +289,7 @@ vector<uint32_t> IVFFlat<T>::query_range(const vector<T>& q, double R, size_t ma
 
     vector<int> cent_idxs = nprobe_nearest_centroids(q, final_centroids, nprobe);   //return vector with idxs of nprobe nearest clusters (aka bucket idxs)
     vector<uint32_t> res;
+    size_t max_check = 0;
 
     for(int i = 0 ; i < static_cast<int>(cent_idxs.size()) ; i++){
         const auto& bucket = table.buckets[cent_idxs[i]];
@@ -301,7 +298,12 @@ vector<uint32_t> IVFFlat<T>::query_range(const vector<T>& q, double R, size_t ma
             if (dist <= R){
                 res.push_back(e.obj_id);
             }
+            max_check++;
+            if (max_checked && max_check >= max_checked)
+                break;
         }
+        if (max_checked &&max_check >= max_checked)
+            break;
     }
 
     return res;

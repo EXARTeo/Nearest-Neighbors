@@ -9,7 +9,7 @@
 #include <limits>
 
 #include "Brute_force.hpp"
-#include "../Includes/Args.hpp"
+#include "Args.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -74,7 +74,7 @@ void searcher(Args& args, vector<vector<T>>& X, vector<vector<T>>& Q, Knn knn, R
         //Approximate range
         if(args.range){
             out <<"\nR-near neighbors:\n";
-            vector<uint32_t> range_approx = range(q, args.R, 0);
+            vector<uint32_t> range_approx = range(q, args.R, 0);    //0 == return all points you find
             for(size_t i = 0; i < range_approx.size(); i++){
                 out << range_approx[i]<<'\n';
             }

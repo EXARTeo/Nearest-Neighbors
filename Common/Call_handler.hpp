@@ -1,6 +1,4 @@
 #pragma once
-#include "../Includes/Args.hpp"
-#include "../Includes/LoadData.hpp"
 
 #include "../Includes/LSH.hpp"
 #include "../Includes/Hypercube.hpp"
@@ -8,6 +6,8 @@
 #include "../Includes/IVFPQ.hpp"
 
 #include "Search_dispatcher.hpp"
+#include "LoadData.hpp"
+#include "Args.hpp"
 
 
 template<class T>

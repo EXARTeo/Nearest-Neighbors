@@ -7,14 +7,10 @@
 #include "../Common/Search_dispatcher.hpp"
 #include "../Common/Vector_distance.hpp"
 #include "../Common/Call_handler.hpp"
-
-#include "../Includes/LoadData.hpp"
-#include "../Includes/Args.hpp"
-#include "../Includes/LSH.hpp"
-
+#include "../Common/LoadData.hpp"
+#include "../Common/Args.hpp"
 
 using namespace std;
-
 
 int main(int argc, char** argv) {
 

@@ -48,6 +48,10 @@ template <class T>
 LSH<T>::LSH(size_t dim, uint32_t k, uint32_t L, double w, uint32_t table_size, uint32_t seed, uint32_t M)
     : d(dim), k(k), L(L), w(w), table_size(table_size), M(M) {
     
+    if (k <= 0) throw invalid_argument("k must be positive");
+    if (L <= 0) throw invalid_argument("L must be positive");
+    if (w <= 0) throw invalid_argument("w must be positive");
+
     //L diffrent g functios
     g.reserve(L);
     for (uint32_t i = 0; i < L; ++i)
@@ -75,13 +79,6 @@ template <class T>
 void LSH<T>::build(const vector<vector<T>>& X) {
     for (uint32_t id = 0; id < X.size(); ++id)
         insert_object(id, X[id]);
-
-    // for (uint32_t i = 0; i < L; i++){
-    //     cout <<"[DEBUG] G_"<<i<<endl;
-    //     for (uint32_t j = 0; j < table_size; j++){
-    //         cout <<"[DEBUG] bucket_"<<j<<" has size : "<<tables[i].buckets[j].size()<<endl;
-    //     }
-    // }
 }
 
 
@@ -91,27 +88,17 @@ void LSH<T>::build(const vector<vector<T>>& X) {
 
 template <class T>
 vector<pair<uint32_t, double>> LSH<T>::query_knn(const vector<T>& q, int N) const {
-
     vector<double> qd(q.begin(), q.end());
     unordered_set<uint32_t> seen;
     priority_queue<pair<double, uint32_t>> max_heap; //(dist, id)
-    // cout <<"[DEBUG] STARTING KNN for query with the ID:"<<endl;
     for (uint32_t i = 0; i < L; ++i) {
-        // cout <<"[DEBUG] ID : "<<g[i].ID(qd)<<endl;
- 
         uint32_t q_id = g[i].ID(qd);
         uint32_t bucket_idx = q_id % table_size;
-        // cout <<'\n'<<"[DEBUG] q_id :  "     <<q_id<<endl; 
-        // cout <<'\n'<<"[DEBUG] bucket_idx :  "<<bucket_idx<<endl;
 
         const auto& bucket = tables[i].buckets[bucket_idx];
-        // cout <<"[DEBUG] Size of bucket : "<< bucket.size()<<endl;
         for (const auto& e : bucket) {
-            // cout <<"[DEBUG] obj_id: " <<static_cast<uint32_t>(e.obj_id) <<endl;
-            // cout <<"[DEBUG] func_id: " <<static_cast<uint32_t>(e.func_id) <<endl;
-
             if (seen.insert(e.obj_id).second) {
-                if (q_id == e.func_id){
+                if (q_id == e.func_id){     //If they have diffrent ID, don't waste time checking TODO
                     double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0);    //L2
                     if ((int)max_heap.size() < N)
                         max_heap.emplace(dist, e.obj_id);
@@ -124,7 +111,6 @@ vector<pair<uint32_t, double>> LSH<T>::query_knn(const vector<T>& q, int N) cons
         }
     }
 
-    //TODO OPTIMIZE
     vector<pair<uint32_t, double>> res;
     while (!max_heap.empty()) {
         res.emplace_back(max_heap.top().second, max_heap.top().first);
@@ -144,18 +130,15 @@ vector<uint32_t> LSH<T>::query_range(const vector<T>& q, double R, size_t max_ch
     vector<double> qd(q.begin(), q.end());
     unordered_set<uint32_t> results;
     size_t checked = 0;
-    // cout <<"[DEBUG] STARTING range for query with the ID:"<<endl;
+
     for (uint32_t i = 0; i < L; ++i) {
-        // cout <<"[DEBUG] ID : "<<g[i].ID(qd)<<endl;
         uint32_t q_id = g[i].ID(qd);
         uint32_t bucket_idx = q_id % table_size;
-        // cout <<'\n'<<"[DEBUG] bucket_idx :  "<<bucket_idx<<endl;
 
         const auto& bucket = tables[i].buckets[bucket_idx];
         for (const auto& e : bucket) {
-            // cout <<"[DEBUG] obj_id: " <<static_cast<uint32_t>(e.obj_id) <<endl;
             if (results.find(e.obj_id) == results.end()) {
-                if (q_id == e.func_id){
+                if (q_id == e.func_id){     //If they have diffrent ID, don't waste time checking TODO
                     double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0);    //L2
                     ++checked;
                     if (dist <= R){
@@ -172,8 +155,3 @@ vector<uint32_t> LSH<T>::query_range(const vector<T>& q, double R, size_t max_ch
 
     return vector<uint32_t>(results.begin(), results.end());
 }
-
-// Maybe used for safety maybe not ¯\_(ツ)_/¯
-// template class LSH<uint8_t>;
-// template class LSH<float>;
-// template class LSH<double>;

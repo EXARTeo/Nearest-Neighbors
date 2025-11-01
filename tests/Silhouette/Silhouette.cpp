@@ -57,4 +57,13 @@ double compute_silhouette(const vector<vector<T>>& X, const vector<int>& labels,
     return avg / n;
 }
 
+// Explicit instantiation
+template double compute_silhouette<unsigned char>(
+    const vector<vector<unsigned char>>&,
+    const vector<int>&,
+    const vector<vector<unsigned char>>&);
 
+template double compute_silhouette<float>(
+    const vector<vector<float>>&,
+    const vector<int>&,
+    const vector<vector<float>>&);

@@ -6,7 +6,8 @@
 #include <utility>
 
 #include "../Common/HashTable.hpp"
-#include "../Includes/Fhash.hpp"
+
+#include "Fhash.hpp"
 #include "Hhash.hpp"
 
 //Hash function f_i(h_i(p))

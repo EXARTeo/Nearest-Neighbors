@@ -104,7 +104,7 @@ vector<int> kmeans_init(const vector<vector<T>>& X, int kclusters, int seed){
 
         //Due to floating point error, cumulative may never exceed r
         if (static_cast<int>(centroid_idxs.size()) < i + 1)
-            centroid_idxs.push_back(X.size() - 1);          //Fallback TODO
+            centroid_idxs.push_back(X.size() - 1);          //Fallback
 
     }
     return centroid_idxs;
@@ -180,8 +180,14 @@ vector<vector<T>> IVFPQ<T>::lloyds_alg(const vector<vector<T>>& X, vector<int>& 
 template <class T>
 IVFPQ<T>::IVFPQ(size_t d, int kclusters, int nprobe, int M, int nbits, uint32_t seed)
 : seed(seed), kclusters(kclusters), nprobe(nprobe), M(M), nbits(nbits), s(1 << nbits), d(d), subdim(d/M){
+
+    if (kclusters <= 0) throw invalid_argument("kclusters must be positive");
+    if (nprobe <= 0)    throw invalid_argument("nprobe must be positive");
+    if (nbits <= 0)     throw invalid_argument("nbits must be positive");
+    if (M <= 0 && (d%M == 0)) throw invalid_argument("M must be positive and d%M == 0");
+
     lists.resize(kclusters);
-    residuals.resize(M);            //Residuals[m] = list of vectors (AKA r(x) = x - c(x))
+    residuals.resize(M);        //Residuals[m] = list of vectors (AKA r(x) = x - c(x))
 }
 
 
@@ -286,7 +292,7 @@ void IVFPQ<T>::build_subcentroids(const vector<vector<T>>& X) {
             int base = m * subdim;                              //Which index of the points coordinates we start at for r_i
             for (int t = 0; t < subdim; ++t)
                 part[t] = r[base + t];
-            residuals[m].push_back(move(part));                 //TODO try with no move
+            residuals[m].push_back(move(part));
         }
     }
 
@@ -297,14 +303,13 @@ void IVFPQ<T>::build_subcentroids(const vector<vector<T>>& X) {
         subspace_centroids[m].assign(s, vector<T>(subdim, 0));
 
         vector<vector<T>> centers;
-        vector<vector<T>> rand_set = get_random_subset(residuals[m], s);
 
         //Call lloyd for each subspace..
-        vector<int> idx = kmeans_init(rand_set, s, seed);
-        centers = lloyds_alg(rand_set, idx, s, seed);
+        vector<int> idx = kmeans_init(residuals[m], s, seed);
+        centers = lloyds_alg(residuals[m], idx, s, seed);
         //..and save the sub centroids
         for (int h = 0; h < s; ++h)
-            subspace_centroids[m][h] = move(centers[h]);        //TODO try with no move
+            subspace_centroids[m][h] = move(centers[h]);
     }
 }
 
@@ -362,10 +367,9 @@ vector<pair<uint32_t, double>> IVFPQ<T>::query_knn(const vector<T>& q, int N) co
             int base = m * subdim;                  //Which index of the points coordinates we start at for r_i
             for (int t = 0; t < subdim; ++t)
                 part[t] = r[base + t];
-            all_res_parts.push_back(move(part));    //TODO try with no move
+            all_res_parts.push_back(move(part));
         }
 
-        int max_check = 0;
         const auto& bucket = lists[cent_idxs[i]];
         for (const auto& e : bucket) {
             double dist = 0.0;
@@ -383,12 +387,7 @@ vector<pair<uint32_t, double>> IVFPQ<T>::query_knn(const vector<T>& q, int N) co
                 max_heap.pop();
                 max_heap.emplace(dist, e.obj_id);
             }
-            max_check++;
-            // if (max_check >= kclusters * 10)    //TODO change
-            //     break;
         }
-        // if (max_check >= kclusters * 10)        //TODO change
-        //     break;
     }
 
     vector<pair<uint32_t, double>> res;
@@ -410,6 +409,7 @@ vector<uint32_t> IVFPQ<T>::query_range(const vector<T>& q, double R, size_t max_
 
     vector<int> cent_idxs = nprobe_nearest_centroids(q, final_centroids, nprobe);   //return vector with idxs of nprobe nearest clusters (aka bucket idxs)
     vector<uint32_t> res;
+    size_t max_check = 0;
 
     for(int i = 0 ; i < static_cast<int>(cent_idxs.size()) ; i++){
 
@@ -428,10 +428,9 @@ vector<uint32_t> IVFPQ<T>::query_range(const vector<T>& q, double R, size_t max_
             int base = m * subdim;                              //Which index of the points coordinates we start at for r_i
             for (int t = 0; t < subdim; ++t)
                 part[t] = r[base + t];
-            all_res_parts.push_back(move(part));                 //TODO try with no move
+            all_res_parts.push_back(move(part));
         }
-
-        int max_check = 0;
+        
         const auto& bucket = lists[cent_idxs[i]];
         for (const auto& e : bucket) {
             double dist = 0.0;
@@ -448,11 +447,11 @@ vector<uint32_t> IVFPQ<T>::query_range(const vector<T>& q, double R, size_t max_
                 res.push_back(e.obj_id);
             }
             max_check++;
-            // if (max_check >= kclusters * 10)    //TODO change
-            //     break;
+            if (max_checked && max_check >= max_checked)
+                break;
         }
-        // if (max_check >= kclusters * 10)        //TODO change
-        //     break;
+        if (max_checked &&max_check >= max_checked)
+            break;
     }
 
     return res;

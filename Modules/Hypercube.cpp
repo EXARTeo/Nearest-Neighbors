@@ -17,10 +17,9 @@ using namespace std;
 
 F_Function::F_Function(size_t dim, uint32_t kproj, double w, uint32_t table_size, uint32_t seed)
     : h(), f(), table_size(table_size){
-    
-    //might not use
-    // if (kproj == 0) throw std::invalid_argument("kproj must be > 0");
-    // if (w <= 0.0) throw std::invalid_argument("w must be > 0");
+
+    if (kproj <= 0) throw std::invalid_argument("kproj must be > 0");
+    if (w <= 0.0)   throw std::invalid_argument("w must be > 0");
 
     h.reserve(kproj);
     f.reserve(kproj);
@@ -61,11 +60,10 @@ template <class T>
 Hypercube<T>::Hypercube(size_t dim, int kproj, int M, int probes, double w, uint32_t table_size, uint32_t seed)
     : d(dim), kproj(kproj), M(M), probes(probes), w(w), table_size(table_size), f(dim, kproj, w, table_size, seed), table() /*initialize table*/ {
 
-    //might not use
-    // if (kproj <= 0) throw std::invalid_argument("kproj must be positive");
-    // if (M <= 0) throw std::invalid_argument("M must be positive");
-    // if (probes <= 0) throw std::invalid_argument("probes must be positive");
-    // if (w <= 0) throw std::invalid_argument("w must be positive");
+    if (kproj <= 0)  throw invalid_argument("kproj must be positive");
+    if (M <= 0)      throw invalid_argument("M must be positive");
+    if (probes <= 0) throw invalid_argument("probes must be positive");
+    if (w <= 0)      throw invalid_argument("w must be positive");
 
     table.buckets.resize(table_size);
 }
@@ -84,8 +82,8 @@ void Hypercube<T>::build(const vector<vector<T>>& X) {
         insert_object(id, X[id]);
 }
 
-//Returns a vector containing the all of q_id's neighbors' bucket indexes 
-//of hamming distance ham 
+//Returns a vector containing the all of q_id's neighbors' bucket indexes..
+//..of hamming distance ham
 vector<uint32_t> hamming_neighbors(const vector<int>& q_id, int kproj, int ham){
     vector<uint32_t> neighbors;
 
@@ -95,7 +93,7 @@ vector<uint32_t> hamming_neighbors(const vector<int>& q_id, int kproj, int ham){
     }
 
     vector<int> indices(kproj);
-    iota(indices.begin(), indices.end(), 0); // [0, 1, 2, ..., kproj-1]
+    iota(indices.begin(), indices.end(), 0); //[0, 1, 2, ..., kproj-1]
 
     vector<int> comb(ham);                   //contains the indexes of q_id on which we should flip the bits
 
@@ -162,7 +160,6 @@ vector<pair<uint32_t, double>> Hypercube<T>::query_knn(const vector<T>& q, int N
         }
     }
 
-    //TODO OPTIMIZE
     vector<pair<uint32_t, double>> res;
     while (!max_heap.empty()) {
         res.emplace_back(max_heap.top().second, max_heap.top().first);

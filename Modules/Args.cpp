@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-#include "../Includes/Args.hpp"
+#include "../Common/Args.hpp"
 
 using namespace std;
 
