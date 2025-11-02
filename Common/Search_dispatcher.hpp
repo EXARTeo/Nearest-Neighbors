@@ -51,7 +51,7 @@ void searcher(Args& args, vector<vector<T>>& X, vector<vector<T>>& Q, Knn knn, R
         else
             BFpreload = "tests/BF_results/BFsift/BFsift" + to_string(qi + 1) + ".txt";
 
-        vector<pair<uint32_t,double>> true_dist = load_bf(BFpreload);
+        vector<pair<uint32_t,double>> true_dist = load_bf(BFpreload, N);
 
         if (!Knn_approx.empty())
             sum_AF += Knn_approx[0].second / true_dist[0].second;

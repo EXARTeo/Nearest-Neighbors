@@ -133,7 +133,7 @@ vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_i
     for (int idx : centroid_idxs)
         centroids.push_back(X[idx]);
 
-    const int max_iters = 100;              //max iterations before stopping
+    const int max_iters = 15;              //max iterations before stopping
     const double tol = 1e-4;                //convergence tolerance
     int dim = X[0].size();
     vector<int> assignments(X.size(), -1);  //contains the index for the closest centroid of each point

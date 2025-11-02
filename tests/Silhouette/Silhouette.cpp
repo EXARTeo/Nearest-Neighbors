@@ -21,12 +21,16 @@ double compute_silhouette(const vector<vector<T>>& X, const vector<int>& labels,
                 countA++;
             }
         }
+        if (countA == 0) {
+            s[i] = 0.0;
+            continue;
+        }
         if (countA > 0)
             a /= countA;
 
         //b(i): average dist of the second "best" cluster 
         double minb = numeric_limits<double>::max();
-        size_t b_inx = -1;
+        int b_inx = -1;
         for (size_t c = 0; c < centroids.size(); ++c) {
             if ((int)c == ci)
                 continue;
@@ -47,6 +51,11 @@ double compute_silhouette(const vector<vector<T>>& X, const vector<int>& labels,
         }
         if (countB > 0)
             b /= countB;
+
+        if (a == 0.0 && b == 0.0){
+            s[i] = 0.0;
+            continue;
+        }
 
         s[i] = (b - a) / max(a, b);
     }

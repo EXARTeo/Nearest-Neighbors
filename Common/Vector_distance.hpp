@@ -31,9 +31,18 @@ double lp_dist(ItX x_start, ItX x_end, ItY y_start, double k){
         return (double)cnt;
     }
 
-    //L_k: k > 0
     long double dist = 0.0L;
 
+    //L_2
+    if (k == 2.0) {
+        for (; x_start != x_end; ++x_start, ++y_start) {
+            long double my_pow = (long double)(*x_start) - (long double)(*y_start);
+            dist += my_pow * my_pow;
+        }
+        return (double)powl(dist, 1.0L / (long double)k);
+    }
+
+    //L_k: k > 0
     for (; x_start != x_end; ++x_start, ++y_start) {
         dist += powl(fabsl((long double)(*x_start) - (long double)(*y_start)), (long double)k);
     }

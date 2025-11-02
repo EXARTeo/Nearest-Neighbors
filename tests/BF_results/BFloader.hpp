@@ -5,7 +5,7 @@
 #include <string>
 
 
-std::vector<std::pair<uint32_t,double>> load_bf(std::string& preloaded_file){
+std::vector<std::pair<uint32_t,double>> load_bf(std::string& preloaded_file, int N){
     std::vector<std::pair<uint32_t,double>> results;
     std::ifstream in(preloaded_file);
     if (!in)
@@ -13,9 +13,10 @@ std::vector<std::pair<uint32_t,double>> load_bf(std::string& preloaded_file){
 
     uint32_t id;
     double dist;
-    while (in >> id >> dist)
+    while (in >> id >> dist && N != 0){
+        N--;
         results.emplace_back(id, dist);
-    
+    }
     return results;
 }
 

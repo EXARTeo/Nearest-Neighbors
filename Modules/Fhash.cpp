@@ -13,7 +13,7 @@ using namespace std;
 Fhash::Fhash(int seed) : seed(seed) {}
 
 //Overload function for "f(h_value)"
-int Fhash::operator()(int h_value) const {
+bool Fhash::operator()(int h_value) const {
 
     //If we have already computed the value of f(h_value), return it
     auto it = f_values.find(h_value);
@@ -24,7 +24,7 @@ int Fhash::operator()(int h_value) const {
     //Otherwise assign a new random bit
     std::mt19937_64 rng(static_cast<uint64_t>((h_value)^seed));
     std::uniform_int_distribution<int> bit_dist(0, 1);
-    int bit = bit_dist(rng);
+    bool bit = static_cast<bool>(bit_dist(rng));
 
     //Store the result (0 or 1) to the map
     f_values[h_value] = bit;

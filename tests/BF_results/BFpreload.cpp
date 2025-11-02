@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <omp.h>
 
-#include "../../Includes/LoadData.hpp"
+#include "../../Common/LoadData.hpp"
 #include "../../Common/Brute_force.hpp"
 
 using namespace std;

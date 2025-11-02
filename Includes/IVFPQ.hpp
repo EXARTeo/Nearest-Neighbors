@@ -30,7 +30,7 @@ private:
     int nbits;          //-nbits
     int s;              //2^nbits
 
-    size_t d = -1;      //Dimention of the datasets' points
+    size_t d = 0;       //Dimention of the datasets' points
     int subdim = -1;    //== d / M
 
 
@@ -40,17 +40,14 @@ private:
         uint32_t list_id;                   //Coarse list id (centroid index)
     };
 
-    std::vector<std::vector<std::vector<T>>> residuals;             //residuals[M] (AKA r(x) = x - c(x))
-    std::vector<std::vector<T>> final_centroids;                    //The finalized centroids
-    std::vector<std::vector<std::vector<T>>> subspace_centroids;    //Subspace_centroids[M][s] (AKA C[M][h])
-    std::vector<std::vector<PQEntry>> lists;                        //Inverted lists: each coarse list saves PQ codes
+    std::vector<std::vector<std::vector<float>>> residuals;             //residuals[M] (AKA r(x) = x - c(x))
+    std::vector<std::vector<float>> final_centroids;                    //The finalized centroids
+    std::vector<std::vector<std::vector<float>>> subspace_centroids;    //Subspace_centroids[M][s] (AKA C[M][h])
+    std::vector<std::vector<PQEntry>> lists;                            //Inverted lists: each coarse list saves PQ codes
 
     void build_subcentroids(const std::vector<std::vector<T>>& X);
-    void encode_residual(const std::vector<std::vector<T>>& r, std::vector<unsigned int>& codes) const;
-    void compute_residual(const std::vector<T>& x, int j, std::vector<T>& r) const;
-    std::pair<double, int> nearest_centroid(const std::vector<T>& x, const std::vector<std::vector<T>>& centroids);
-    std::vector<std::vector<T>> get_random_subset(const std::vector<std::vector<T>>& X, int cluster_num);
-    std::vector<std::vector<T>> lloyds_alg(const std::vector<std::vector<T>>& X, std::vector<int>& centroid_idxs, int kclusters, uint32_t seed);
+    void encode_residual(const std::vector<std::vector<float>>& r, std::vector<unsigned int>& codes) const;
+    void compute_residual(const std::vector<T>& x, int j, std::vector<float>& r) const;
 };
 
 

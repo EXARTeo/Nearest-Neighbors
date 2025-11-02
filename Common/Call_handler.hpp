@@ -29,7 +29,7 @@ void call_dispatcher(Args& args, DataImages<T>& D, DataImages<T>& Q) {
             break;
         }
         case Mode::Hypercube:{
-            Hypercube<T> table(D.dim, args.kproj, args.M, args.probes, args.w, 1 << args.kproj, args.seed);
+            Hypercube<T> table(D.dim, args.kproj, args.M, args.probes, args.w, static_cast<uint32_t>(1 << args.kproj), args.seed);
             table.build(D.X);
             searcher<T>(args, D.X, Q.X,
                 [&table](const vector<T>& q, int N) {return table.query_knn(q, N);}, 

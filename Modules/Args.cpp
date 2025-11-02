@@ -83,6 +83,7 @@ Args load_args(int argc, char** argv){
         }
         else if (s == string("-M") && (i + 1 < argc)){
             args.M = stoi(string(argv[++i]));
+            args.M_pq = stoi(string(argv[i]));
         }
         else if (s == string("-probes") && (i + 1 < argc)){
             args.probes = stoi(string(argv[++i]));
@@ -103,9 +104,6 @@ Args load_args(int argc, char** argv){
         }
         else if (s == string("-nbits") && (i + 1 < argc)){
             args.nbits = stoi(string(argv[++i]));
-        }
-        else if (s == string("-M") && (i + 1 < argc)){
-            args.M_pq = stoi(string(argv[++i]));
         }
         else{
             cout <<"USAGE : $./search -d <input file> -q <query file> -k <int> -L <int> -w <double> -o <output file> -N <number of nearest> -R <radius> -type <flag> -lsh -range <true|false>\n";

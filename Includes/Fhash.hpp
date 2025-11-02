@@ -6,11 +6,11 @@
 class Fhash {
 private:
     int seed;
-    mutable std::unordered_map<int, int> f_values;      //store already computed f_values
+    mutable std::unordered_map<int, bool> f_values;      //store already computed f_values
 
 public:
     explicit Fhash(int seed = 1);
 
     //Overload function for "f(h_value)"
-    int operator()(int h_value) const;
+    bool operator()(int h_value) const;
 };

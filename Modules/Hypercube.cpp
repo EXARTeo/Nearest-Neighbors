@@ -31,22 +31,22 @@ F_Function::F_Function(size_t dim, uint32_t kproj, double w, uint32_t table_size
     }
 }
 
-std::vector<int> F_Function::operator()(const std::vector<double>& p) const {
-    std::vector<int> bits;
-    bits.reserve(h.size());     //kproj
+std::vector<bool> F_Function::operator()(const std::vector<double>& p) const {
+    std::vector<bool> bits;
+    bits.reserve(h.size());      //kproj
 
     for (size_t i = 0; i < h.size(); ++i) {
-        int h_val = h[i](p);    //Compute h_i(p)
-        int bit = f[i](h_val);  //Compute f_i(h_i(p))
+        int h_val = h[i](p);     //Compute h_i(p)
+        bool bit  = f[i](h_val); //Compute f_i(h_i(p))
         bits.push_back(bit);
     }
 
     return bits;
 }
 
-int bits_to_int(const std::vector<int>& bits) {
-    int result = 0;
-    for (int bit : bits) {
+uint32_t bits_to_int(const std::vector<bool>& bits) {
+    uint32_t result = 0;
+    for (bool bit : bits) {
         result = (result << 1) | bit;  //shift result left, add current bit
     }
     return result;
@@ -60,7 +60,7 @@ template <class T>
 Hypercube<T>::Hypercube(size_t dim, int kproj, int M, int probes, double w, uint32_t table_size, uint32_t seed)
     : d(dim), kproj(kproj), M(M), probes(probes), w(w), table_size(table_size), f(dim, kproj, w, table_size, seed), table() /*initialize table*/ {
 
-    if (kproj <= 0)  throw invalid_argument("kproj must be positive");
+    if (kproj <= 0 || kproj >= 32) throw invalid_argument("kproj must be positive and kproj < 32");
     if (M <= 0)      throw invalid_argument("M must be positive");
     if (probes <= 0) throw invalid_argument("probes must be positive");
     if (w <= 0)      throw invalid_argument("w must be positive");
@@ -71,20 +71,20 @@ Hypercube<T>::Hypercube(size_t dim, int kproj, int M, int probes, double w, uint
 template <class T>
 void Hypercube<T>::insert_object(uint32_t obj_id, const vector<T>& x) {
     vector<double> p(x.begin(), x.end());
-    uint32_t bucket_idx = static_cast<uint32_t>(bits_to_int(f(p)));
+    uint32_t bucket_idx = bits_to_int(f(p));
     Entry<T> new_entry{obj_id, &x, bucket_idx};
     table.buckets[bucket_idx].push_back(new_entry);
 }
 
 template <class T>
 void Hypercube<T>::build(const vector<vector<T>>& X) {
-    for (uint32_t id = 0; id < X.size(); ++id)
+    for (size_t id = 0; id < X.size(); ++id)
         insert_object(id, X[id]);
 }
 
 //Returns a vector containing the all of q_id's neighbors' bucket indexes..
 //..of hamming distance ham
-vector<uint32_t> hamming_neighbors(const vector<int>& q_id, int kproj, int ham){
+vector<uint32_t> hamming_neighbors(const vector<bool>& q_id, int kproj, int ham){
     vector<uint32_t> neighbors;
 
     if (ham == 0) {
@@ -100,7 +100,7 @@ vector<uint32_t> hamming_neighbors(const vector<int>& q_id, int kproj, int ham){
     //Recursively create all neighbor combinations of the given hamming distance
     function<void(int,int)> gen = [&](int start, int k) {
         if (k == 0) {
-            vector<int> neighbor_bits = q_id;
+            vector<bool> neighbor_bits = q_id;
             for (int pos : comb)
                 neighbor_bits[pos] = 1 - neighbor_bits[pos]; //flip bits
             neighbors.push_back(bits_to_int(neighbor_bits));
@@ -127,7 +127,7 @@ vector<pair<uint32_t, double>> Hypercube<T>::query_knn(const vector<T>& q, int N
     unordered_set<uint32_t> seen;
     priority_queue<pair<double, uint32_t>> max_heap; //(dist, id)
 
-    vector<int> q_id = f(qd);   //get vector with bits, eg. [0,0,1,1,0]
+    vector<bool> q_id = f(qd);  //get vector with bits, eg. [0,0,1,1,0]
 
     int checked_buckets = 0;    //max 'probes' buckets can be checked
     int checked_points = 0;     //max 'M' points can be searched
@@ -181,7 +181,7 @@ vector<uint32_t> Hypercube<T>::query_range(const vector<T>& q, double R, size_t 
     unordered_set<uint32_t> seen;
     vector<uint32_t> res;
 
-    vector<int> q_id = f(qd);   //get vector with bits, eg. [0,0,1,1,0]
+    vector<bool> q_id = f(qd);  //get vector with bits, eg. [0,0,1,1,0]
 
     int checked_buckets = 0;    //max 'probes' buckets can be checked
     int checked_points = 0;     //max 'M' points can be searched

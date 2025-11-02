@@ -23,18 +23,18 @@ Hhash::Hhash(size_t d, double width, int seed) : v(d), w(width) {
         xi = normal(rng);
 
     //TODO
-    //Normalization
-    double norm2 = 0.0;
-    for (double xi : v)
-        norm2 += xi * xi;
+    // //Normalization
+    // double norm2 = 0.0;
+    // for (double xi : v)
+    //     norm2 += xi * xi;
 
-    double norm = sqrt(norm2);
-    if (norm == 0.0) {
-        throw runtime_error("Hhash: sampled zero vector for v");
-    }
+    // double norm = sqrt(norm2);
+    // if (norm == 0.0) {
+    //     throw runtime_error("Hhash: sampled zero vector for v");
+    // }
 
-    for (double &xi : v)
-        xi /= norm;
+    // for (double &xi : v)
+    //     xi /= norm;
 
     //t ~ U[0, w)
     t = uni(rng);

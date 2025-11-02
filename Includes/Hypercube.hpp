@@ -4,6 +4,7 @@
 #include <limits>
 #include <random>
 #include <utility>
+#include <numeric>
 
 #include "../Common/HashTable.hpp"
 
@@ -18,7 +19,7 @@ struct F_Function {
 
 	F_Function(size_t dim, uint32_t kproj, double w, uint32_t table_size, uint32_t seed);
 
-    std::vector<int> operator()(const std::vector<double>& p) const;
+    std::vector<bool> operator()(const std::vector<double>& p) const;
 };
 
 template <class T>
