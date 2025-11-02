@@ -4,7 +4,7 @@ CPPFLAGS := -IIncludes
 LDFLAGS  :=
 LDLIBS   :=
 
-SRCS := tests/main.cpp $(wildcard Modules/*.cpp)
+SRCS := main.cpp $(wildcard Modules/*.cpp)
 
 OBJS := $(patsubst %.cpp, build/%.o, $(SRCS))
 DEPS := $(OBJS:.o=.d)
