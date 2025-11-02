@@ -130,6 +130,4 @@ query_knn και query_range που εκτελουν αναζητηση. Και 
 
 Φακελος "tests/Silhouette"
 
-- Silhouette.cpp: Περιεχει την υλοποιηση της compute_silhouette, η οποια υπολογιζει την τιμη silhouette καθε στοιχειου και επιστρεφει την μεση τιμη τους.
-
-- Silhouette.hpp: Περιεχει τον ορισμο της συναρτησης compute_silhouette.
+- Silhouette.hpp: Περιεχει την υλοποιηση της compute_silhouette, η οποια υπολογιζει την τιμη silhouette καθε στοιχειου και επιστρεφει την μεση τιμη τους.
