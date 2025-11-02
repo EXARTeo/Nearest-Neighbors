@@ -24,6 +24,12 @@ build/%.o: %.cpp
 
 -include $(DEPS)
 
+experiments: search
+	bash scripts/run_experiments.sh
+
+summarize:
+	python3 scripts/summarize_ann_results.py
+
 run: $(TARGET)
 	./$(TARGET)
 

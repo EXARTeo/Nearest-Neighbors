@@ -9,6 +9,9 @@
 #include "../Includes/IVFFlat.hpp"
 #include "../Common/Vector_distance.hpp"
 
+//Uncomment for testing silhouette (0)
+// #include "../tests/Silhouette/Silhouette.hpp"
+
 using namespace std;
 
 // -----------------------------
@@ -17,11 +20,11 @@ using namespace std;
 
 //Returns point q's 'nprobe' closest centroids 
 template <class T>
-vector<int> nprobe_nearest_centroids(const vector<T>& q, const vector<vector<T>>& centroids, int nprobe){
+vector<int> nprobe_nearest_centroids(const vector<T>& q, const vector<vector<float>>& centroids, int nprobe){
     priority_queue<pair<double, int>> max_heap; //(dist, id)
 
     for (int i = 0 ; i < static_cast<int>(centroids.size()) ; i++){
-        const vector<T>& centroid = centroids[i];
+        const vector<float>& centroid = centroids[i];
         double dist = lp_dist(q.begin(), q.end(), centroid.begin(), 2.0); //L2
         if ((int)max_heap.size() < nprobe){
             max_heap.emplace(dist, i);
@@ -44,12 +47,12 @@ vector<int> nprobe_nearest_centroids(const vector<T>& q, const vector<vector<T>>
 
 //Returns a pair containing the distance and the index of the closest centroid to point q
 template <class T>
-pair<double, int> distance_to_nearest_centroid_2(const vector<T>& q, const vector<vector<T>>& centroids){
+pair<double, int> distance_to_nearest_centroid_2(const vector<T>& q, const vector<vector<float>>& centroids){
     double true_shortest_dist = -1.0;
     int cent_idx = 0;
     for (int i = 0 ; i < static_cast<int>(centroids.size()) ; i++){
-        const vector<T>& centroid = centroids[i];
-        double dist = lp_dist(q.begin(), q.end(), centroid.begin(), 2.0); //L2
+        const vector<float>& centroid = centroids[i];
+        double dist = lp_dist(q.begin(), q.end(), centroid.begin(), 2.0);   //L2
         if (dist < true_shortest_dist || true_shortest_dist < 0.0){
             true_shortest_dist = dist;
             cent_idx = i;
@@ -64,8 +67,7 @@ template <class T>
 double distance_to_nearest_centroid(const vector<vector<T>>& X, const vector<T>& q, const vector<int>& centroid_idxs){
     double true_shortest_dist = -1.0;
     for (int i = 0 ; i < static_cast<int>(centroid_idxs.size()) ; i++){
-        const vector<T>& centroid = X[centroid_idxs[i]];
-        double dist = lp_dist(q.begin(), q.end(), centroid.begin(), 2.0); //L2
+        double dist = lp_dist(q.begin(), q.end(), X[centroid_idxs[i]].begin(), 2.0);    //L2
         if (dist < true_shortest_dist || true_shortest_dist < 0.0){
             true_shortest_dist = dist;
         }
@@ -126,14 +128,13 @@ vector<int> kmeans_init(const vector<vector<T>>& X, int kclusters, int seed){
 }
 
 template <class T>
-vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_idxs, int kclusters, uint32_t seed){
-    //convert initial centroid indices into actual centroid vectors
-    vector<vector<T>> centroids;
-    centroids.reserve(kclusters);
-    for (int idx : centroid_idxs)
-        centroids.push_back(X[idx]);
+vector<vector<float>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_idxs, int kclusters, uint32_t seed){
+    vector<vector<float>> centroids;
+    centroids.reserve(centroid_idxs.size());
+    for (const auto& idx : centroid_idxs)
+        centroids.emplace_back(X[idx].begin(), X[idx].end());
 
-    const int max_iters = 15;              //max iterations before stopping
+    const int max_iters = 15;               //max iterations before stopping
     const double tol = 1e-4;                //convergence tolerance
     int dim = X[0].size();
     vector<int> assignments(X.size(), -1);  //contains the index for the closest centroid of each point
@@ -147,27 +148,29 @@ vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_i
         }
 
         //recompute centroids
-        vector<vector<T>> new_centroids(kclusters, vector<T>(dim, 0));
-        vector<int> counts(kclusters, 0);
+        vector<vector<float>> new_centroids(kclusters, vector<float>(dim, 0));
+        vector<int> counts(kclusters, 0);  
 
         
         for (int i = 0 ; i < static_cast<int>(X.size()) ; i++){
             int cluster = assignments[i];
             counts[cluster]++;
             for (int d = 0; d < dim; ++d)
-                new_centroids[cluster][d] += X[i][d];
+                new_centroids[cluster][d] += static_cast<float>(X[i][d]);
         }
         
         for (int cluster = 0 ; cluster < static_cast<int>(new_centroids.size()) ; cluster++){
             if (counts[cluster] > 0){
                 for (int d = 0; d < dim; ++d)
-                    new_centroids[cluster][d] =  new_centroids[cluster][d] / static_cast<double>(counts[cluster]);
+                    new_centroids[cluster][d] =  new_centroids[cluster][d] / static_cast<float>(counts[cluster]);
             }
             else {
                 mt19937_64 rng(static_cast<uint64_t>(seed));
                 uniform_int_distribution<int> subset_rand(0, static_cast<int>(X.size()) - 1);
                 int idx = subset_rand(rng);
-                new_centroids[cluster] = X[idx];   //TODO Yolo move goes brrrr
+                for (int i = 0 ; i < dim ; i++){
+                    new_centroids[cluster][i] = static_cast<float>(X[idx][i]);
+                }
             }
         }
 
@@ -201,10 +204,16 @@ IVFFlat<T>::IVFFlat(int kclusters, int nprobe, uint32_t seed)
     table.buckets.resize(kclusters);
 }
 
+//Uncomment for testing silhouette (1)
+// vector<int> sil_test;
+
 template <class T>
-void IVFFlat<T>::insert_object(uint32_t obj_id, const vector<T>& x, const vector<vector<T>>& centroids) {
+void IVFFlat<T>::insert_object(uint32_t obj_id, const vector<T>& x, const vector<vector<float>>& centroids) {
     pair<double, int> dist_and_cent = distance_to_nearest_centroid_2(x, centroids);
     int closest_centroid = dist_and_cent.second;
+
+    //Uncomment for testing silhouette (2)
+    // sil_test[obj_id] = closest_centroid;
 
     Entry<T> new_entry{obj_id, &x, static_cast<uint32_t>(closest_centroid)};
     table.buckets[closest_centroid].push_back(new_entry);
@@ -242,9 +251,20 @@ void IVFFlat<T>::build(const vector<vector<T>>& X) {
     //now have to do Lloyd's algorithm to get the final centroids
     final_centroids = lloyds_alg(subset, centroid_idxs, kclusters, seed);
 
+    //Uncomment for testing silhouette (3)
+    // sil_test.resize(X.size());
+    // vector<int> labels(X.size(), -1);
+
     //Lastly insert all objects
     for (uint32_t id = 0; id < X.size(); ++id)
         insert_object(id, X[id], final_centroids);
+
+    //Uncomment for testing silhouette (4)
+    // vector<vector<float>> X_f;
+    // X_f.reserve(X.size());
+    // for (const auto& v : X)
+    //     X_f.emplace_back(v.begin(), v.end());
+    // cout <<"Silhouette: "<<compute_silhouette_parallel<float>(X_f, sil_test, final_centroids)<<'\n';
 }
 
 // -----------------------------

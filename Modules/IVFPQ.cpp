@@ -9,6 +9,9 @@
 #include "../Includes/IVFPQ.hpp"
 #include "../Common/Vector_distance.hpp"
 
+//Uncomment for testing silhouette (0)
+// #include "../tests/Silhouette/Silhouette.hpp"
+
 using namespace std;
 
 
@@ -93,8 +96,7 @@ template <class T>
 double distance_to_nearest_centroid(const vector<vector<T>>& X, const vector<T>& q, const vector<int>& centroid_idxs){
     double true_shortest_dist = -1.0;
     for (int i = 0 ; i < static_cast<int>(centroid_idxs.size()) ; i++){
-        const vector<T>& centroid = X[centroid_idxs[i]];
-        double dist = lp_dist(q.begin(), q.end(), centroid.begin(), 2.0); //L2
+        double dist = lp_dist(q.begin(), q.end(), X[centroid_idxs[i]].begin(), 2.0); //L2
         if (dist < true_shortest_dist || true_shortest_dist < 0.0){
             true_shortest_dist = dist;
         }
@@ -128,7 +130,7 @@ vector<int> kmeans_init(const vector<vector<T>>& X, int kclusters, int seed){
             }
             double shortest_dist = distance_to_nearest_centroid(X, X[j], centroid_idxs);
 
-            all_squared_dists[j] = shortest_dist * shortest_dist;   //TODO
+            all_squared_dists[j] = shortest_dist * shortest_dist;
             total += all_squared_dists[j];
         }
 
@@ -155,12 +157,11 @@ vector<int> kmeans_init(const vector<vector<T>>& X, int kclusters, int seed){
 }
 
 template <class T>
-vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_idxs, int kclusters, uint32_t seed){
-    //convert initial centroid indices into actual centroid vectors
+vector<vector<float>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_idxs, int kclusters, uint32_t seed){
     vector<vector<float>> centroids;
-    centroids.reserve(kclusters);
-    for (int idx : centroid_idxs)
-        centroids.push_back(X[idx]);
+    centroids.reserve(centroid_idxs.size());
+    for (const auto& idx : centroid_idxs)
+        centroids.emplace_back(X[idx].begin(), X[idx].end());
 
     const int max_iters = 15;               //max iterations before stopping
     const double tol = 1e-4;                //convergence tolerance
@@ -178,12 +179,11 @@ vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_i
         vector<vector<float>> new_centroids(kclusters, vector<float>(dim, 0));
         vector<int> counts(kclusters, 0);
 
-
         for (int i = 0 ; i < static_cast<int>(X.size()) ; i++){
             int cluster = assignments[i];
             counts[cluster]++;
             for (int di = 0; di < dim; ++di)
-                new_centroids[cluster][di] += X[i][di];
+                new_centroids[cluster][di] += static_cast<float>(X[i][di]);
         }
 
         for (int cluster = 0 ; cluster < static_cast<int>(new_centroids.size()) ; cluster++){
@@ -195,7 +195,9 @@ vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_i
                 mt19937_64 rng(static_cast<uint64_t>(seed));
                 uniform_int_distribution<int> subset_rand(0, static_cast<int>(X.size()) - 1);
                 int idx = subset_rand(rng);
-                new_centroids[cluster] = X[idx];   //TODO Yolo move goes brrrr
+                for (int i = 0 ; i < dim ; i++){
+                    new_centroids[cluster][i] = static_cast<float>(X[idx][i]);
+                }
             }
         }
 
@@ -207,7 +209,6 @@ vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_i
         }
 
         centroids.swap(new_centroids);
-        //TODO delete tol maybe ...
         if (max_shift == 0 || max_shift < tol) {
             break;
         }
@@ -218,7 +219,7 @@ vector<vector<T>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centroid_i
 
 
 // -----------------------------
-//  IVFFlat Implementation
+//  IVFPQ Implementation
 // -----------------------------
 
 template <class T>
@@ -236,6 +237,8 @@ IVFPQ<T>::IVFPQ(size_t d, int kclusters, int nprobe, int M, int nbits, uint32_t 
     residuals.resize(M);        //Residuals[m] = list of vectors (AKA r(x) = x - c(x))
 }
 
+//Uncomment for testing silhouette (1)
+// vector<int> sil_testpq;
 
 template <class T>
 void IVFPQ<T>::insert_object(uint32_t obj_id, const vector<T>& x) {
@@ -246,6 +249,10 @@ void IVFPQ<T>::insert_object(uint32_t obj_id, const vector<T>& x) {
     pair<double, int>to_second = nearest_centroid(xf, final_centroids);
 
     int j = to_second.second;
+
+    //Uncomment for testing silhouette (2)
+    // sil_testpq[obj_id] = j;
+
     vector<unsigned int> codes;
     codes.resize(M);
 
@@ -277,9 +284,20 @@ void IVFPQ<T>::build(const vector<vector<T>>& X) {
     //Build the subspace_centroids
     build_subcentroids(X);
 
+    //Uncomment for testing silhouette (3)
+    // sil_testpq.resize(X.size());
+
     //Lastly insert all objects
     for (uint32_t id = 0; id < X.size(); ++id)
         insert_object(id, X[id]);
+
+    //Uncomment for testing silhouette (4)
+    // vector<vector<float>> X_f;
+    // X_f.reserve(X.size());
+    // for (const auto& v : X)
+    //     X_f.emplace_back(v.begin(), v.end());
+
+    // cout <<"Silhouette: "<<compute_silhouette_parallel<float>(X_f, sil_testpq, final_centroids)<<'\n';
 }
 
 //Calculate the PQ(x) = [code_1(x), ..., code_M(x)] for x with residual r, and store it in codes

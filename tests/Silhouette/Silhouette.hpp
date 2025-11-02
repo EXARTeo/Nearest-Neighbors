@@ -1,10 +1,79 @@
 #pragma once
+#include <cstdint>
 #include <vector>
 #include <cmath>
 
+
 template <class T>
-double compute_silhouette(
-    const std::vector<std::vector<T>>& X,            //The point set
-    const std::vector<int>& labels,                  //Cluster id for each Point
-    const std::vector<std::vector<T>>& centroids     //The centroid set
-);
+double compute_silhouette(const std::vector<std::vector<T>>& X, const std::vector<int>& labels, const std::vector<std::vector<T>>& centroids){
+    size_t n = X.size();
+    std::vector<double> s(n, 0.0);
+
+    for (size_t i = 0; i < n; ++i) {
+        int ci = labels[i];
+        const auto& xi = X[i];
+
+        //a(i): average dist of the "best" cluster 
+        double a = 0.0;
+        int countA = 0;
+        for (size_t j = 0; j < n; ++j) {
+            if (labels[j] == ci && i != j) {
+                a += lp_dist(xi.begin(), xi.end(), X[j].begin(), 2.0);
+                countA++;
+            }
+        }
+        if (countA == 0) {
+            s[i] = 0.0;
+            continue;
+        }
+        if (countA > 0)
+            a /= countA;
+
+        //b(i): average dist of the second "best" cluster 
+        double minb = numeric_limits<double>::max();
+        int b_inx = -1;
+        for (size_t c = 0; c < centroids.size(); ++c) {
+            if ((int)c == ci)
+                continue;
+            double temp = lp_dist(xi.begin(), xi.end(), centroids[c].begin(), 2.0);
+            if (minb > temp){
+                minb = temp;
+                b_inx = c;
+            }
+        }
+
+        double b = 0.0;
+        int countB = 0;
+        for (size_t j = 0; j < n; ++j) {
+            if (labels[j] == (int)b_inx) {
+                b += lp_dist(xi.begin(), xi.end(), X[j].begin(), 2.0);
+                countB++;
+            }
+        }
+        if (countB > 0)
+            b /= countB;
+
+        if (a == 0.0 && b == 0.0){
+            s[i] = 0.0;
+            continue;
+        }
+
+        s[i] = (b - a) / max(a, b);
+    }
+
+    //Return the final silhouette
+    double avg = 0.0;
+    for (double si : s) avg += si;
+    return avg / n;
+}
+
+
+template double compute_silhouette<uint8_t>(
+    const std::vector<std::vector<uint8_t>>&,
+    const std::vector<int>&,
+    const std::vector<std::vector<uint8_t>>&);
+
+template double compute_silhouette<float>(
+    const std::vector<std::vector<float>>&,
+    const std::vector<int>&,
+    const std::vector<std::vector<float>>&);
