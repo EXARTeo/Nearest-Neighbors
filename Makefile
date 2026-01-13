@@ -1,5 +1,6 @@
 CXX      := g++
-CXXFLAGS := -Wall
+CXXFLAGS := -Wall -O3 -march=native -DNDEBUG
+
 CPPFLAGS := -IIncludes
 LDFLAGS  :=
 LDLIBS   :=

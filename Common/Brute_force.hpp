@@ -8,7 +8,7 @@
 
 
 template <class T>
-std::vector<std::pair<uint32_t,double>> brute_force(std::vector<T> &q, std::vector<std::vector<T>> &D){
+std::vector<std::pair<uint32_t,double>> brute_force(std::vector<T> &q, std::vector<std::vector<T>> &D, int N){
 
     std::vector<std::pair<uint32_t, double>> v;
     if (D.empty()) return v;
@@ -20,6 +20,11 @@ std::vector<std::pair<uint32_t,double>> brute_force(std::vector<T> &q, std::vect
     }
 
     std::sort(v.begin(), v.end(), [](const auto& a, const auto& b){ return a.second < b.second; });
+
+    if (N >= static_cast<int>(v.size()))
+        return v;
+
+    v.resize(N);
 
     return v;
 }

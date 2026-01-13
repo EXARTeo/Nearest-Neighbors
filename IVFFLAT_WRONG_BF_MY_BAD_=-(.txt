@@ -1,0 +1,9 @@
+IVFFlat
+
+
+Average AF: 1.00131
+Recall@N: 1.66667e-05
+QPS: 117.104
+tApproximateAverage: 0.00853941
+tTrueAverage: 0.0579863
+

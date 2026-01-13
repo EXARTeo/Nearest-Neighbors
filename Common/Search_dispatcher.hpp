@@ -44,13 +44,22 @@ void searcher(Args& args, vector<vector<T>>& X, vector<vector<T>>& Q, Knn knn, R
 
         //Brute-force
         auto Tbf0 = high_resolution_clock::now();
-        vector<pair<uint32_t,double>> true_dist = brute_force(q, X);
+        vector<pair<uint32_t,double>> true_dist = brute_force(q, X, N);
         auto Tbf1 = high_resolution_clock::now();
         double Tbf = duration<double>(Tbf1 - Tbf0).count();
         sum_tTrue += Tbf;
 
-        if (!Knn_approx.empty())
-            sum_AF += Knn_approx[0].second / true_dist[0].second;
+        if (!Knn_approx.empty()){
+            //Fallback just in case (99.99% never)
+            if (true_dist[0].second == 0){
+                if (Knn_approx[0].second == true_dist[0].second)
+                    sum_AF += 1;
+                else
+                    sum_AF += Knn_approx[0].second;
+            }
+            else
+                sum_AF += Knn_approx[0].second / true_dist[0].second;
+        }
 
         //Query prints
         out << "Query: " << qi + 1 << '\n';
@@ -63,8 +72,10 @@ void searcher(Args& args, vector<vector<T>>& X, vector<vector<T>>& Q, Knn knn, R
         int hits = 0;
         for (size_t i = 0; i < Knn_approx.size(); i++){
             for(size_t j = 0; j < true_dist.size(); j++){
-                if(Knn_approx[i].first == true_dist[j].first)
+                if(Knn_approx[i].first == true_dist[j].first){
                     hits++;
+                    break;
+                }
             }
         }
 

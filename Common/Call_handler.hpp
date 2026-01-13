@@ -21,7 +21,11 @@ void call_dispatcher(Args& args, DataImages<T>& D, DataImages<T>& Q) {
 
     switch (args.mode) {
         case Mode::LSH:{
-            LSH<T> table(D.dim, args.k, args.L, args.w, D.n/4, args.seed);
+            uint32_t b_size = D.n/4;
+            if (b_size == 0){
+                b_size = 1;
+            }
+            LSH<T> table(D.dim, args.k, args.L, args.w, b_size, args.seed);
             table.build(D.X);
             searcher<T>(args, D.X, Q.X,
                 [&table](const vector<T>& q, int N) {return table.query_knn(q, N);}, 

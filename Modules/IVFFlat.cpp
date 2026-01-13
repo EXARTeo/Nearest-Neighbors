@@ -18,6 +18,19 @@ using namespace std;
 //  Helper Functions
 // -----------------------------
 
+template <class ItX, class ItY>
+double fast_dist(ItX x_start, ItX x_end, ItY y_start, double k){
+
+    long double dist = 0.0L;
+
+    for (; x_start != x_end; ++x_start, ++y_start) {
+        long double my_pow = (long double)(*x_start) - (long double)(*y_start);
+        dist += my_pow * my_pow;
+    }
+    return (double)dist;
+}
+
+
 //Returns point q's 'nprobe' closest centroids 
 template <class T>
 vector<int> nprobe_nearest_centroids(const vector<T>& q, const vector<vector<float>>& centroids, int nprobe){
@@ -25,7 +38,7 @@ vector<int> nprobe_nearest_centroids(const vector<T>& q, const vector<vector<flo
 
     for (int i = 0 ; i < static_cast<int>(centroids.size()) ; i++){
         const vector<float>& centroid = centroids[i];
-        double dist = lp_dist(q.begin(), q.end(), centroid.begin(), 2.0); //L2
+        double dist = fast_dist(q.begin(), q.end(), centroid.begin(), 2.0); //L2
         if ((int)max_heap.size() < nprobe){
             max_heap.emplace(dist, i);
         }
@@ -52,7 +65,7 @@ pair<double, int> distance_to_nearest_centroid_2(const vector<T>& q, const vecto
     int cent_idx = 0;
     for (int i = 0 ; i < static_cast<int>(centroids.size()) ; i++){
         const vector<float>& centroid = centroids[i];
-        double dist = lp_dist(q.begin(), q.end(), centroid.begin(), 2.0);   //L2
+        double dist = fast_dist(q.begin(), q.end(), centroid.begin(), 2.0);   //L2
         if (dist < true_shortest_dist || true_shortest_dist < 0.0){
             true_shortest_dist = dist;
             cent_idx = i;
@@ -67,7 +80,7 @@ template <class T>
 double distance_to_nearest_centroid(const vector<vector<T>>& X, const vector<T>& q, const vector<int>& centroid_idxs){
     double true_shortest_dist = -1.0;
     for (int i = 0 ; i < static_cast<int>(centroid_idxs.size()) ; i++){
-        double dist = lp_dist(q.begin(), q.end(), X[centroid_idxs[i]].begin(), 2.0);    //L2
+        double dist = fast_dist(q.begin(), q.end(), X[centroid_idxs[i]].begin(), 2.0);    //L2
         if (dist < true_shortest_dist || true_shortest_dist < 0.0){
             true_shortest_dist = dist;
         }
@@ -101,7 +114,8 @@ vector<int> kmeans_init(const vector<vector<T>>& X, int kclusters, int seed){
             }
             double shortest_dist = distance_to_nearest_centroid(X, X[j], centroid_idxs);
 
-            all_squared_dists[j] = shortest_dist * shortest_dist;
+            // all_squared_dists[j] = shortest_dist * shortest_dist;
+            all_squared_dists[j] = shortest_dist;
             total += all_squared_dists[j];
         }
 
@@ -135,7 +149,10 @@ vector<vector<float>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centro
         centroids.emplace_back(X[idx].begin(), X[idx].end());
 
     const int max_iters = 15;               //max iterations before stopping
-    const double tol = 1e-4;                //convergence tolerance
+    // const double tol = 1e-4;             //convergence tolerance
+    const double tol = 1e-8;                //convergence tolerance
+    
+
     int dim = X[0].size();
     vector<int> assignments(X.size(), -1);  //contains the index for the closest centroid of each point
 
@@ -177,7 +194,7 @@ vector<vector<float>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centro
         //check convergence
         double max_shift = 0.0;
         for (int c = 0; c < kclusters; ++c) {
-            double shift = lp_dist(centroids[c].begin(), centroids[c].end(), new_centroids[c].begin(), 2.0);
+            double shift = fast_dist(centroids[c].begin(), centroids[c].end(), new_centroids[c].begin(), 2.0);
             max_shift = max(max_shift, shift);
         }
 
@@ -246,7 +263,12 @@ void IVFFlat<T>::build(const vector<vector<T>>& X) {
     }
 
     //compute kmeans++ init to get first approximation of centroids first
-    vector<int> centroid_idxs = kmeans_init(subset, kclusters, static_cast<int>(seed));
+    vector<int> centroid_idxs;
+    if (sqrt_n == kclusters)
+        for (int i = 0; i < sqrt_n; i++)
+            centroid_idxs.push_back(i);
+    else
+        centroid_idxs = kmeans_init(subset, kclusters, static_cast<int>(seed));
 
     //now have to do Lloyd's algorithm to get the final centroids
     final_centroids = lloyds_alg(subset, centroid_idxs, kclusters, seed);
@@ -280,7 +302,7 @@ vector<pair<uint32_t, double>> IVFFlat<T>::query_knn(const vector<T>& q, int N) 
     for(int i = 0 ; i < static_cast<int>(cent_idxs.size()) ; i++){
         const auto& bucket = table.buckets[cent_idxs[i]];
         for (const auto& e : bucket) {
-            double dist = lp_dist(e.x->begin(), e.x->end(), q.begin(), 2.0); //L2
+            double dist = fast_dist(e.x->begin(), e.x->end(), q.begin(), 2.0); //L2
             if ((int)max_heap.size() < N)
                 max_heap.emplace(dist, e.obj_id);
             else if (dist < max_heap.top().first) {
@@ -296,6 +318,8 @@ vector<pair<uint32_t, double>> IVFFlat<T>::query_knn(const vector<T>& q, int N) 
         max_heap.pop();
     }
     reverse(res.begin(), res.end());
+    for (auto &p : res)
+        p.second = sqrt(p.second);
 
     return res;
 }

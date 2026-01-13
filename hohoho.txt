@@ -1,0 +1,25 @@
+LSH
+
+Query: 1
+Nearest neighbor-1: 0
+distanceApproximate: 0
+distanceTrue: 0
+Nearest neighbor-2: 1
+distanceApproximate: 3.17892
+distanceTrue: 3.17892
+
+Query: 2
+Nearest neighbor-1: 1
+distanceApproximate: 0
+distanceTrue: 0
+Nearest neighbor-2: 0
+distanceApproximate: 3.17892
+distanceTrue: 3.17892
+
+
+Average AF: 1
+Recall@N: 1
+QPS: 45563.3
+tApproximateAverage: 2.19475e-05
+tTrueAverage: 2.5715e-06
+
