@@ -19,6 +19,18 @@ using namespace std;
 //  Helper Functions
 // -----------------------------
 
+template <class ItX, class ItY>
+double fast_dist(ItX x_start, ItX x_end, ItY y_start, double k){
+
+    long double dist = 0.0L;
+
+    for (; x_start != x_end; ++x_start, ++y_start) {
+        long double my_pow = (long double)(*x_start) - (long double)(*y_start);
+        dist += my_pow * my_pow;
+    }
+    return (double)dist;
+}
+
 template <class T>
 vector<vector<T>> get_random_subset(const vector<vector<T>>& X, int cluster_num, int seed){
     if (cluster_num <= 0) throw runtime_error("cluster_num must be positive integer");
@@ -52,7 +64,7 @@ pair<double, int> nearest_centroid(const vector<T>& q, const vector<vector<float
     double true_shortest_dist = -1.0;
     int cent_idx = 0;
     for (int i = 0 ; i < static_cast<int>(centroids.size()) ; i++){
-        double dist = lp_dist(q.begin(), q.end(), centroids[i].begin(), 2.0); //L2
+        double dist = fast_dist(q.begin(), q.end(), centroids[i].begin(), 2.0); //L2
         if (dist < true_shortest_dist || true_shortest_dist < 0.0){
             true_shortest_dist = dist;
             cent_idx = i;
@@ -70,7 +82,7 @@ vector<int> nprobe_nearest_centroids(const vector<T>& q, const vector<vector<flo
 
     for (int i = 0 ; i < static_cast<int>(centroids.size()) ; i++){
         const vector<float>& centroid = centroids[i];
-        double dist = lp_dist(q.begin(), q.end(), centroid.begin(), 2.0); //L2
+        double dist = fast_dist(q.begin(), q.end(), centroid.begin(), 2.0); //L2
         if ((int)max_heap.size() < nprobe){
             max_heap.emplace(dist, i);
         }
@@ -96,7 +108,7 @@ template <class T>
 double distance_to_nearest_centroid(const vector<vector<T>>& X, const vector<T>& q, const vector<int>& centroid_idxs){
     double true_shortest_dist = -1.0;
     for (int i = 0 ; i < static_cast<int>(centroid_idxs.size()) ; i++){
-        double dist = lp_dist(q.begin(), q.end(), X[centroid_idxs[i]].begin(), 2.0); //L2
+        double dist = fast_dist(q.begin(), q.end(), X[centroid_idxs[i]].begin(), 2.0); //L2
         if (dist < true_shortest_dist || true_shortest_dist < 0.0){
             true_shortest_dist = dist;
         }
@@ -204,7 +216,7 @@ vector<vector<float>> lloyds_alg(const vector<vector<T>>& X, vector<int>& centro
         //check convergence
         double max_shift = 0.0;
         for (int c = 0; c < kclusters; ++c) {
-            double shift = lp_dist(centroids[c].begin(), centroids[c].end(), new_centroids[c].begin(), 2.0);
+            double shift = fast_dist(centroids[c].begin(), centroids[c].end(), new_centroids[c].begin(), 2.0);
             max_shift = max(max_shift, shift);
         }
 
@@ -305,9 +317,9 @@ template <class T>
 void IVFPQ<T>::encode_residual(const vector<vector<float>>& r, vector<unsigned int>& codes) const {
     for (int m = 0; m < M; ++m) {
         int best_h = 0;
-        double best = lp_dist(r[m].begin(), r[m].end(), subspace_centroids[m][0].begin(), 2.0);       //L2
+        double best = fast_dist(r[m].begin(), r[m].end(), subspace_centroids[m][0].begin(), 2.0);       //L2
         for (int h = 1; h < s; ++h) {
-            double dist = lp_dist(r[m].begin(), r[m].end(), subspace_centroids[m][h].begin(), 2.0);   //Dist between r_i and c_i,h
+            double dist = fast_dist(r[m].begin(), r[m].end(), subspace_centroids[m][h].begin(), 2.0);   //Dist between r_i and c_i,h
             if (dist < best) {
                 best = dist;
                 best_h = h;
@@ -404,7 +416,7 @@ vector<pair<uint32_t, double>> IVFPQ<T>::query_knn(const vector<T>& q, int N) co
             for (int m = 0; m < M; ++m) {
                 unsigned int code = e.codes[m];
                 if(LUT[m][code] < 0.0){
-                    LUT[m][code] = lp_dist(all_res_parts[m].begin(), all_res_parts[m].end(), subspace_centroids[m][code].begin(), 2.0);
+                    LUT[m][code] = fast_dist(all_res_parts[m].begin(), all_res_parts[m].end(), subspace_centroids[m][code].begin(), 2.0);
                 }
                 dist += LUT[m][code];
             }
@@ -424,6 +436,8 @@ vector<pair<uint32_t, double>> IVFPQ<T>::query_knn(const vector<T>& q, int N) co
         max_heap.pop();
     }
     reverse(res.begin(), res.end());
+    for (auto &p : res)
+        p.second = sqrt(p.second);
 
     return res;
 }
